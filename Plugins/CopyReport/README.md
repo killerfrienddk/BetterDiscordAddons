@@ -1,0 +1,1 @@
+Allows you to copy a users username and user id at the same time.
