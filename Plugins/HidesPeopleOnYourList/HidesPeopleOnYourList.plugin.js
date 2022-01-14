@@ -166,7 +166,6 @@ module.exports = (_ => {
                         };
                         
                         if (oldStream[i].content.author != null && oldStream[i].content.author != undefined) {
-                            console.log(oldStream[i])
                             if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
                                 let [message, index] = this.getHiddenPeopleInRow(oldStream, i, hiddenPeople);
 
