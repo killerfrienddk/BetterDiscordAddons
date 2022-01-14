@@ -3,6 +3,9 @@
  * @version 1.0.0
  * @description This plugin allowes you to hide people from servers or dms they will show up as spam.
  * @author KillerFRIEND
+ * @website https://github.com/killerfrienddk
+ * @source https://github.com/killerfrienddk/BetterDiscordAddons/tree/master/Plugins/HidesPeopleOnYourList/
+ * @updateUrl https://killerfrienddk.github.io/BetterDiscordAddons/Plugins/HidesPeopleOnYourList/HidesPeopleOnYourList.plugin.js
 */
 
 module.exports = (_ => {
@@ -67,38 +70,17 @@ module.exports = (_ => {
         return class HidePeopleFromList extends Plugin {
             onLoad() {
                 this.defaults = {
-                    notifcations: {
-                        messages: { value: true, description: "Messages Notifications" },
-                        voiceChat: { value: true, description: "Voice Chat Notifications" },
-                    },
-                    people: {
-
-                    }
+                    people: []
                 };
 
                 this.patchedModules = {
                     before: {
                         Message: "default",
-                        ReactorsComponent: "render",
-                        ChannelMembers: "render",
-                        PrivateChannelRecipients: "default",
-                        VoiceUsers: "render",
-                        PrivateChannel: "render",
-                        PrivateChannelCallParticipants: "render",
-                        ChannelCall: "render",
-                        UserSummaryItem: "render"
                     },
                     after: {
-                        ChannelPins: "default",
-                        RecentMentions: "default",
                         Messages: "type",
-                        Reactions: "render",
-                        MemberListItem: "render",
-                        VoiceUser: "render",
                         DirectMessage: "render",
                         PrivateChannel: "render",
-                        UserMention: "default",
-                        RichUserMention: "UserMention"
                     }
                 };
 
@@ -121,7 +103,6 @@ module.exports = (_ => {
             createMenuButton(user, returnvalue) {
                 let hiddenPeople = this.getPersonToHiddenList();
 
-                console.log(returnvalue)
                 if (user && returnvalue) {
                     let isHidden = this.checkIfIdExisits(hiddenPeople, user.id);
                     let [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["pin", "unpin"] });
@@ -179,12 +160,13 @@ module.exports = (_ => {
                     for (let i = 0; i < oldStream.length; i++) {
                         let next = parseInt(i) + 1;
 
-                        if (oldStream[i].type == "DIVIDER" || (oldStream[next] && oldStream[i].type != "DIVIDER" && oldStream[next].type == "DIVIDER" && oldStream.slice(next).some(nextStream => nextStream.type == "DIVIDER"))) {
+                        if (Array.isArray(oldStream[i].content) || oldStream[i].type == "Blocked" || oldStream[i].type == "DIVIDER" || (oldStream[next] && oldStream[i].type != "DIVIDER" && oldStream[next].type == "DIVIDER" && oldStream.slice(next).some(nextStream => nextStream.type == "DIVIDER"))) {
                             newStream.push(oldStream[i]);
                             continue;
                         };
-
-                        if (oldStream[i].content.author != null) {
+                        
+                        if (oldStream[i].content.author != null && oldStream[i].content.author != undefined) {
+                            console.log(oldStream[i])
                             if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
                                 let [message, index] = this.getHiddenPeopleInRow(oldStream, i, hiddenPeople);
 
@@ -222,11 +204,6 @@ module.exports = (_ => {
             getPersonToHiddenList() {
                 let hiddenPeople = BDFDB.DataUtils.load(this, "hiddenPeople");
                 if (this.isEmptyObject(hiddenPeople)) return [];
-                /* let array = [];
-                for (let i = 0; i < hiddenPeople.length; i++) {
-                    array.push(hiddenPeople[i].id);
-                }
-console.log(JSON.stringify(array)) */
 
                 return BDFDB.ArrayUtils.is(hiddenPeople) && !this.isEmptyArray(hiddenPeople) ? hiddenPeople : [];
             }
