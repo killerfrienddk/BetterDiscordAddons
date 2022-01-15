@@ -1,6 +1,6 @@
 /**
  * @name HidesPeopleOnYourList
- * @version 1.0.3
+ * @version 1.0.4
  * @description This plugin allowes you to hide people from servers or dms they will show up as spam.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,7 +13,7 @@ module.exports = (_ => {
         "info": {
             "name": "HidesPeopleOnYourList",
             "author": "KillerFRIEND",
-            "version": "1.0.2",
+            "version": "1.0.4",
             "description": "This plugin allowes you to hide people from servers or dms they will show up as spam."
         }
     };
@@ -157,26 +157,24 @@ module.exports = (_ => {
                 let messagesIns = e.returnvalue.props.children;
                 let hiddenPeople = this.getPersonToHiddenList();
                 if (BDFDB.ArrayUtils.is(messagesIns.props.channelStream)) {
-                    let oldStream = messagesIns.props.channelStream, newStream = [];
+                    let oldStream = messagesIns.props.channelStream.filter(n => n.type != "MESSAGE_GROUP_BLOCKED"), newStream = [];
 
                     for (let i = 0; i < oldStream.length; i++) {
                         let next = parseInt(i) + 1;
 
-                        if (Array.isArray(oldStream[i].content) || oldStream[i].type == "Blocked" || oldStream[i].type == "DIVIDER" || (oldStream[next] && oldStream[i].type != "DIVIDER" && oldStream[next].type == "DIVIDER" && oldStream.slice(next).some(nextStream => nextStream.type == "DIVIDER"))) {
+
+                        if (oldStream[i].type != "MESSAGE" || oldStream[i].type == "DIVIDER" || (oldStream[next] && oldStream[i].type != "DIVIDER" && oldStream[next].type == "DIVIDER" && oldStream.slice(next).some(nextStream => nextStream.type == "DIVIDER"))) {
                             newStream.push(oldStream[i]);
                             continue;
                         };
-                        
-                        if (oldStream[i].content.author != null && oldStream[i].content.author != undefined) {
-                            if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
-                                let [message, index] = this.getHiddenPeopleInRow(oldStream, i, hiddenPeople);
+                       
+                        if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
+                            let [message, index] = this.getHiddenPeopleInRow(oldStream, i, hiddenPeople);
 
-                                if (message.content.length >= 2) {
-                                    i = index - 1
-                                }
-                                newStream.push(message);
+                            if (message.content.length >= 2) {
+                                i = index - 1
                             }
-                            else newStream.push(oldStream[i]);
+                            newStream.push(message);
                         }
                         else newStream.push(oldStream[i]);
                     }
@@ -184,7 +182,7 @@ module.exports = (_ => {
                     let groupId, author;
                     for (let i in newStream) {
                         if (newStream[i].type == "MESSAGE" && (newStream[i].content.type.type == BDFDB.DiscordConstants.MessageTypes.DEFAULT || newStream[i].content.type.type == BDFDB.DiscordConstants.MessageTypes.REPLY) && groupId != newStream[i].groupId) {
-                            if (author && author.id == newStream[i].content.author.id && author.username == newStream[i].content.author.username) newStream[i] = Object.assign({}, newStream[i], { groupId: groupId });
+                            if (author && author.id == newStream[i].content.author.id && author.username == newStream[i].content.author.username) newStream[i] = Object.assign({}, newStream[i], {groupId: groupId});
                             author = newStream[i].content.author;
                         }
                         else author = null;;
