@@ -1,6 +1,6 @@
 /**
  * @name HidesPeopleOnYourList
- * @version 1.0.1
+ * @version 1.0.2
  * @description This plugin allowes you to hide people from servers or dms they will show up as spam.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,7 +13,7 @@ module.exports = (_ => {
         "info": {
             "name": "HidesPeopleOnYourList",
             "author": "KillerFRIEND",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "description": "This plugin allowes you to hide people from servers or dms they will show up as spam."
         }
     };
@@ -138,8 +138,9 @@ module.exports = (_ => {
                 for (let i = index; i < oldStream.length; i++) {
                     let next = parseInt(i) + 1;
                     index = i;
-                    if (oldStream[i].type == "DIVIDER" || (oldStream[next] && oldStream[i].type != "DIVIDER" && oldStream[next].type == "DIVIDER" && oldStream.slice(next).some(nextStream => nextStream.type == "DIVIDER"))) {
-                        break;
+                    if (oldStream[i].type != "MESSAGE") {
+                        newStream.push(oldStream[i]);
+                        continue;
                     };
 
                     if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
