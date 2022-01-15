@@ -1,6 +1,6 @@
 /**
  * @name HidesPeopleOnYourList
- * @version 1.0.2
+ * @version 1.0.3
  * @description This plugin allowes you to hide people from servers or dms they will show up as spam.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
