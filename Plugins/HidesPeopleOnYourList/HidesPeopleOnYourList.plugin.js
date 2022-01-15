@@ -138,7 +138,8 @@ module.exports = (_ => {
                 for (let i = index; i < oldStream.length; i++) {
                     let next = parseInt(i) + 1;
                     index = i;
-                    if (oldStream[i].type != "MESSAGE") {
+                    
+                    if (oldStream[i].type != "MESSAGE" || oldStream[i].type == "DIVIDER" || (oldStream[next] && oldStream[i].type != "DIVIDER" && oldStream[next].type == "DIVIDER" && oldStream.slice(next).some(nextStream => nextStream.type == "DIVIDER"))) {
                         newStream.push(oldStream[i]);
                         continue;
                     };
