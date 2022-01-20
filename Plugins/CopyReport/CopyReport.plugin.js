@@ -1,6 +1,6 @@
 /**
  * @name CopyReport
- * @version 1.0.3
+ * @version 1.0.4
  * @description Allows you to copy a users username and user id at the same time.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,13 +13,8 @@ module.exports = (() => {
         "info": {
             "name": "CopyReport",
             "author": "KillerFRIEND",
-            "version": "1.0.3",
+            "version": "1.0.4",
             "description": "Allows you to copy a users username and user id at the same time."
-        },
-        "changeLog": {
-            "feature": {
-                "Toast": "Added a toast for when some one copys a username.",
-            }
         }
     };
 
@@ -59,10 +54,10 @@ module.exports = (() => {
                 });
             }
             if (!window.BDFDB_Global.pluginQueue.includes(config.info.name)) window.BDFDB_Global.pluginQueue.push(config.info.name);
-
-
         }
-        start() { this.load(); }
+        start() { 
+            this.load();
+        }
         stop() { }
         getSettingsPanel() {
             let template = document.createElement("template");
@@ -98,14 +93,17 @@ module.exports = (() => {
 
                     let [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["pin", "unpin"] });
                     if (index == -1) [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["devmode-copy-id"] });
+
+
                     children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuItem, {
-                        label: "Copy Username and U-ID",
+                        label: "Copy Username and ID",
                         id: BDFDB.ContextMenuUtils.createItemId(this.name, "evi-copy"),
                         action: () =>{
                             copyToClipboard(`${username}\n${userID}`);
                             BdApi.showToast(`Copied ${username}'s Username and ID`, { type: "success" });
                         }
                     }));
+                    children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuSeparator));
                 }
             }
 		}
