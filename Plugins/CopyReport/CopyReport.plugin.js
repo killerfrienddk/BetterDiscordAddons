@@ -1,6 +1,6 @@
 /**
  * @name CopyReport
- * @version 1.0.1
+ * @version 1.0.2
  * @description Allows you to copy a users username and user id at the same time.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,7 +13,7 @@ module.exports = (() => {
         "info": {
             "name": "CopyReport",
             "author": "KillerFRIEND",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "description": "Allows you to copy a users username and user id at the same time."
         }
     };
