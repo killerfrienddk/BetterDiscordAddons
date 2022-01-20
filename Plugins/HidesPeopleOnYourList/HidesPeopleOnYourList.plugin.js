@@ -5,7 +5,7 @@
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
  * @source https://github.com/killerfrienddk/BetterDiscordAddons/tree/master/Plugins/HidesPeopleOnYourList/
- * @updateUrl https://killerfrienddk.github.io/BetterDiscordAddons/Plugins/HidesPeopleOnYourList/HidesPeopleOnYourList.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/killerfrienddk/BetterDiscordAddons/main/Plugins/HidesPeopleOnYourList/HidesPeopleOnYourList.plugin.js
 */
 
 module.exports = (_ => {
