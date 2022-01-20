@@ -1,6 +1,6 @@
 /**
  * @name CopyReport
- * @version 1.0.2
+ * @version 1.0.3
  * @description Allows you to copy a users username and user id at the same time.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,8 +13,13 @@ module.exports = (() => {
         "info": {
             "name": "CopyReport",
             "author": "KillerFRIEND",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "description": "Allows you to copy a users username and user id at the same time."
+        },
+        "changeLog": {
+            "feature": {
+                "Toast": "Added a toast for when some one copys a username.",
+            }
         }
     };
 
@@ -96,7 +101,10 @@ module.exports = (() => {
                     children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuItem, {
                         label: "Copy Username and U-ID",
                         id: BDFDB.ContextMenuUtils.createItemId(this.name, "evi-copy"),
-                        action: () => copyToClipboard(`${username}\n${userID}`)
+                        action: () =>{
+                            copyToClipboard(`${username}\n${userID}`);
+                            BdApi.showToast(`Copied ${username}'s Username and ID`, { type: "success" });
+                        }
                     }));
                 }
             }
