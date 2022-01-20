@@ -1,6 +1,6 @@
 /**
  * @name HidesPeopleOnYourList
- * @version 1.0.6
+ * @version 1.0.8
  * @description This plugin allowes you to hide people from servers or dms they will show up as spam.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,11 +13,18 @@ module.exports = (_ => {
         "info": {
             "name": "HidesPeopleOnYourList",
             "author": "KillerFRIEND",
-            "version": "1.0.6",
+            "version": "1.0.8",
             "description": "This plugin allowes you to hide people from servers or dms they will show up as spam."
-        }
+        },
+		"changeLog": {
+			"feature": {
+				"Major Change": "Had to make the hide button not reload all of the messages because of too many api calls.",
+				"HiddenPeople": "The hidden people now caches.",
+                "OneDrive Support": "You can now set up your onedrive to have it on multipule computers and it will remember who you hid. You have to make a folder called BetterDiscordConfigs on there, if it finds a file it will use it instead if the file in your plugins folder. The file should be called HidesPeopleOnYourList.config.json",
+				"Upcomming OneDrive Support toggle": "It is to be implimented in settings not gotten around to it yet though.",
+			}
+		}
     };
-
 
     return (window.Lightcord && !Node.prototype.isPrototypeOf(window.Lightcord) || window.LightCord && !Node.prototype.isPrototypeOf(window.LightCord) || window.Astra && !Node.prototype.isPrototypeOf(window.Astra)) ? class {
         getName() { return config.info.name; }
@@ -55,8 +62,6 @@ module.exports = (_ => {
                 });
             }
             if (!window.BDFDB_Global.pluginQueue.includes(config.info.name)) window.BDFDB_Global.pluginQueue.push(config.info.name);
-
-
         }
         start() { this.load(); }
         stop() { }
@@ -68,9 +73,8 @@ module.exports = (_ => {
         }
     } : (([Plugin, BDFDB]) => {
         var fs = require('fs');
-        var path = require('path');
+        var hiddenPeople = [];
         return class HidePeopleFromList extends Plugin {
-
             onLoad() {
                 this.defaults = {
                     people: []
@@ -103,19 +107,22 @@ module.exports = (_ => {
                 this.createMenuButton(e.instance.props.message.author, e.returnvalue);
             }
 
-            createMenuButton(user, returnvalue) {
-                let hiddenPeople = this.getPersonToHiddenList();
+            createMenuButton(user, returnvalue, message) {
+                this.getPersonToHiddenList(false);
 
                 if (user && returnvalue) {
-                    let isHidden = this.checkIfIdExisits(hiddenPeople, user.id);
+                    let isHidden = this.checkIfIdExisits(user.id);
                     let [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["pin", "unpin"] });
                     if (index == -1) [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["devmode-copy-id"] });
                     children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuItem, {
                         label: isHidden ? "Unhide User" : "Hide User",
                         id: BDFDB.ContextMenuUtils.createItemId(this.name, isHidden ? "unhide-user" : "hide-user"),
                         action: _ => {
-                            if (isHidden) this.removePersonFromList(user.id, hiddenPeople);
-                            else this.addPersonToList(user.id, hiddenPeople);
+                            if (isHidden) this.removePersonFromList(user.id);
+                            else {
+                                if (message) message.blocked = true
+                                this.addPersonToList(user.id, hiddenPeople);
+                            }
                         }
                     }));
                 }
@@ -135,18 +142,17 @@ module.exports = (_ => {
                 return result;
             }
 
-            getHiddenPeopleInRow(oldStream, index, hiddenPeople) {
+            getHiddenPeopleInRow(oldStream, index) {
                 let array = [];
 
                 for (let i = index; i < oldStream.length; i++) {
-                    let next = parseInt(i) + 1;
                     index = i;
 
                     if (oldStream[i].type != "MESSAGE") {
                         break;
                     };
 
-                    if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
+                    if (this.checkIfIdExisits(oldStream[i].content.author.id)) {
                         array.push(oldStream[i]);
                     }
                     else break;
@@ -157,20 +163,18 @@ module.exports = (_ => {
 
             processMessages(e) {
                 let messagesIns = e.returnvalue.props.children;
-                let hiddenPeople = this.getPersonToHiddenList();
+                this.getPersonToHiddenList(false);
                 if (BDFDB.ArrayUtils.is(messagesIns.props.channelStream)) {
                     let oldStream = messagesIns.props.channelStream, newStream = [];
 
                     for (let i = 0; i < oldStream.length; i++) {
-                        let next = parseInt(i) + 1;
-
                         if (oldStream[i].type != "MESSAGE") {
                             newStream.push(oldStream[i]);
                             continue;
                         };
 
-                        if (this.checkIfIdExisits(hiddenPeople, oldStream[i].content.author.id)) {
-                            let [message, index] = this.getHiddenPeopleInRow(oldStream, i, hiddenPeople);
+                        if (this.checkIfIdExisits(oldStream[i].content.author.id)) {
+                            let [message, index] = this.getHiddenPeopleInRow(oldStream, i);
 
                             if (message.content.length >= 2) {
                                 i = index - 1
@@ -182,13 +186,26 @@ module.exports = (_ => {
 
                     let groupId, author;
                     for (let i in newStream) {
-                        if (newStream[i].type == "MESSAGE" && (newStream[i].content.type.type == BDFDB.DiscordConstants.MessageTypes.DEFAULT || newStream[i].content.type.type == BDFDB.DiscordConstants.MessageTypes.REPLY) && groupId != newStream[i].groupId) {
-                            if (author && author.id == newStream[i].content.author.id && author.username == newStream[i].content.author.username) newStream[i] = Object.assign({}, newStream[i], { groupId: groupId });
+                        if (newStream[i].type == "MESSAGE" && (newStream[i].content.type.type == BDFDB.DiscordConstants.MessageTypes.DEFAULT
+                            || newStream[i].content.type.type == BDFDB.DiscordConstants.MessageTypes.REPLY) && groupId != newStream[i].groupId) {
+                            if (author && author.id == newStream[i].content.author.id && author.username == newStream[i].content.author.username) {
+                                newStream[i] = Object.assign({}, newStream[i], { groupId: groupId });
+                            }
                             author = newStream[i].content.author;
                         }
                         else author = null;;
                         groupId = newStream[i].groupId;
+
+                        if (+i + 1 == newStream.length) {
+                            if (newStream[i].type === "MESSAGE_GROUP_SPAMMER" &&
+                                newStream[i - 1].type === "MESSAGE_GROUP_SPAMMER") {
+                                if (newStream[i - 1].content[newStream[i - 1].content.length - 1].content.id ===
+                                    newStream[i].content[newStream[i].content.length - 1].content.id)
+                                    newStream.pop();
+                            }
+                        }
                     }
+
                     messagesIns.props.channelStream = newStream;
                 }
                 if (BDFDB.ObjectUtils.is(messagesIns.props.messages) && BDFDB.ArrayUtils.is(messagesIns.props.messages._array)) {
@@ -228,8 +245,10 @@ module.exports = (_ => {
             }
 
             //#region Person List
-            getPersonToHiddenList() {
-                let hiddenPeople = [];
+            getPersonToHiddenList(reload) {
+                if (!reload && !this.isEmptyArray(hiddenPeople)) return;
+
+                hiddenPeople = [];
                 if (this.checkIfFileExists()) {
                     let config = JSON.parse(fs.readFileSync(this.getConfigPath()));
                     hiddenPeople = config.hiddenPeople;
@@ -240,7 +259,7 @@ module.exports = (_ => {
                 return BDFDB.ArrayUtils.is(hiddenPeople) && !this.isEmptyArray(hiddenPeople) ? hiddenPeople : [];
             }
 
-            addPersonToList(id, hiddenPeople) {
+            addPersonToList(id) {
                 if (!id) return;
 
                 if (!this.checkIfIdExisits(hiddenPeople, id)) {
@@ -249,42 +268,48 @@ module.exports = (_ => {
                 }
             }
 
-            removePersonFromList(id, hiddenPeople) {
+            removePersonFromList(id) {
                 if (!id) return;
 
                 this.savePersonToHiddenList(hiddenPeople.filter(e => e !== id));
             }
 
             savePersonToHiddenList(newList) {
-                let hiddenPeople = this.getPersonToHiddenList();
+                this.getPersonToHiddenList(true);
 
                 hiddenPeople = !this.isEmptyArray(hiddenPeople) ? hiddenPeople : [];
 
                 if (!this.isEmptyArray(newList)) hiddenPeople = newList;
 
+                if (this.checkIfFileExists()) {
+                    if (!this.isEmptyArray(hiddenPeople)) {
+                        let path = this.getConfigPath();
+                        let config = JSON.parse(fs.readFileSync(path))
+                        config.hiddenPeople = hiddenPeople;
+                        fs.writeFileSync(path, JSON.stringify(config, null, "	"));
+                    }
+                } else BDFDB.DataUtils.save(hiddenPeople, this, "hiddenPeople");
 
-                if (!this.isEmptyArray(hiddenPeople)) {
-                    let path = this.getConfigPath();
-                    let config = JSON.parse(fs.readFileSync(path))
-                    config.hiddenPeople = hiddenPeople;
-                    fs.writeFileSync(path, JSON.stringify(config, null, "	"));
-                }
-
-                BDFDB.PatchUtils.forceAllUpdates(this);
-                BDFDB.MessageUtils.rerenderAll();
+                /* BDFDB.PatchUtils.forceAllUpdates(this);
+                BDFDB.MessageUtils.rerenderAll(); */
             }
             //#endregion
 
             //#endregion Helping functions
             isEmptyArray(array) {
-                return array === [];
+                if (array === null) return true;
+                if (array === undefined) return true;
+                if (array === []) return true;
+                if (array.length === 0) return true;
+
+                return false;
             }
 
             isEmptyObject(obj) {
                 return obj === {};
             }
 
-            checkIfIdExisits(hiddenPeople, id) {
+            checkIfIdExisits(id) {
                 for (let i = 0; i < hiddenPeople.length; i++) {
                     if (hiddenPeople[i] == id) return true;
                 }
