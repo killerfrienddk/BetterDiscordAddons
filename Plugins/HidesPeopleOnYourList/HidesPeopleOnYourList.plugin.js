@@ -1,6 +1,6 @@
 /**
  * @name HidesPeopleOnYourList
- * @version 1.0.8
+ * @version 1.0.9
  * @description This plugin allowes you to hide people from servers or dms they will show up as spam.
  * @author KillerFRIEND
  * @website https://github.com/killerfrienddk
@@ -13,7 +13,7 @@ module.exports = (_ => {
         "info": {
             "name": "HidesPeopleOnYourList",
             "author": "KillerFRIEND",
-            "version": "1.0.8",
+            "version": "1.0.9",
             "description": "This plugin allowes you to hide people from servers or dms they will show up as spam."
         },
 		"changeLog": {
@@ -103,28 +103,33 @@ module.exports = (_ => {
             }
 
             onMessageContextMenu(e) {
-                if (e.instance.props.message.author.email !== null) return;
                 this.createMenuButton(e.instance.props.message.author, e.returnvalue);
             }
 
-            createMenuButton(user, returnvalue, message) {
+            createMenuButton(user, returnvalue) {
+                if(user.email !== null) return;
                 this.getPersonToHiddenList(false);
 
                 if (user && returnvalue) {
                     let isHidden = this.checkIfIdExisits(user.id);
                     let [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["pin", "unpin"] });
                     if (index == -1) [children, index] = BDFDB.ContextMenuUtils.findItem(returnvalue, { id: ["devmode-copy-id"] });
+
+                    /* console.log(BDFDB.LibraryComponents.MenuItems) */
+                    children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuSeparator));
+
                     children.splice(index > -1 ? index + 1 : 0, 0, BDFDB.ContextMenuUtils.createItem(BDFDB.LibraryComponents.MenuItems.MenuItem, {
                         label: isHidden ? "Unhide User" : "Hide User",
                         id: BDFDB.ContextMenuUtils.createItemId(this.name, isHidden ? "unhide-user" : "hide-user"),
                         action: _ => {
                             if (isHidden) this.removePersonFromList(user.id);
-                            else {
-                                if (message) message.blocked = true
-                                this.addPersonToList(user.id, hiddenPeople);
-                            }
+                            else this.addPersonToList(user.id, hiddenPeople);
                         }
                     }));
+
+                    if(true) {
+                        console.log(children[index > -1 ? index + 1 : 0]);
+                    }
                 }
             }
 
@@ -176,9 +181,7 @@ module.exports = (_ => {
                         if (this.checkIfIdExisits(oldStream[i].content.author.id)) {
                             let [message, index] = this.getHiddenPeopleInRow(oldStream, i);
 
-                            if (message.content.length >= 2) {
-                                i = index - 1
-                            }
+                            if (message.content.length >= 2) i = index - 1
                             newStream.push(message);
                         }
                         else newStream.push(oldStream[i]);
@@ -193,7 +196,7 @@ module.exports = (_ => {
                             }
                             author = newStream[i].content.author;
                         }
-                        else author = null;;
+                        else author = null;
                         groupId = newStream[i].groupId;
 
                         if (+i + 1 == newStream.length) {
